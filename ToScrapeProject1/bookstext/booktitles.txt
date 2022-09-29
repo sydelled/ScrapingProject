@@ -1,0 +1,81 @@
+
+Title: A Light in the Attic
+
+Price: 51.77
+
+Title: Tipping the Velvet
+
+Price: 53.74
+
+Title: Soumission
+
+Price: 50.10
+
+Title: Sharp Objects
+
+Price: 47.82
+
+Title: Sapiens: A Brief History of Humankind
+
+Price: 54.23
+
+Title: The Requiem Red
+
+Price: 22.65
+
+Title: The Dirty Little Secrets of Getting Your Dream Job
+
+Price: 33.34
+
+Title: The Coming Woman: A Novel Based on the Life of the Infamous Feminist, Victoria Woodhull
+
+Price: 17.93
+
+Title: The Boys in the Boat: Nine Americans and Their Epic Quest for Gold at the 1936 Berlin Olympics
+
+Price: 22.60
+
+Title: The Black Maria
+
+Price: 52.15
+
+Title: Starving Hearts (Triangular Trade Trilogy, #1)
+
+Price: 13.99
+
+Title: Shakespeare's Sonnets
+
+Price: 20.66
+
+Title: Set Me Free
+
+Price: 17.46
+
+Title: Scott Pilgrim's Precious Little Life (Scott Pilgrim #1)
+
+Price: 52.29
+
+Title: Rip it Up and Start Again
+
+Price: 35.02
+
+Title: Our Band Could Be Your Life: Scenes from the American Indie Underground, 1981-1991
+
+Price: 57.25
+
+Title: Olio
+
+Price: 23.88
+
+Title: Mesaerion: The Best Science Fiction Stories 1800-1849
+
+Price: 37.59
+
+Title: Libertarianism for Beginners
+
+Price: 51.33
+
+Title: It's Only the Himalayas
+
+Price: 45.17
+
