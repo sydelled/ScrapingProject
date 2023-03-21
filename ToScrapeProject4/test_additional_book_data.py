@@ -71,7 +71,7 @@ def ten_product_urls(soup_1, productpage_url):
             get_book_url = book_url.get('href')
             booktitle_urls = productpage_url + str((get_book_url))
             product_urls.append(booktitle_urls)
-        return product_urls[0:9]#returns back 10 product urls list
+        return product_urls[0:10]#returns back 10 product urls list
 
 ########################################################################################################
 #function that requests product urls from get_productpage_urls function and puts it into BeautifulSoup
@@ -90,31 +90,29 @@ def request_two (booktitle_urls):
     return soup_2_list #returns list of all product pages parsed html
 
 def get_productpages_data(soup_2):
+    products_data_dict_list = []
     for soup in soup_2:
         book_product = soup.find_all('article', class_='product_page') #finds all div's with class content 
         
     #goes through all the div class content in a loop        
         for paragraphs in book_product:
             product_title = paragraphs.find('h1').text#finds product title in h1 tag
-            price_color = paragraphs.find('p', class_='price_color').decompose()#gets rid of price color tag since it isn't needed
-            instock_availability_class = paragraphs.find('p', class_='instock availability')
-            icon_ok_class_delete = paragraphs.find('i', class_='icon-ok').decompose() #gets rid of i class='icon-ok' since it isn't needed
+            _ = paragraphs.find('p', class_='price_color').decompose()#gets rid of price color tag since it isn't needed
+            #instock_availability_class = paragraphs.find('p', class_='instock availability')
+            _ = paragraphs.find('i', class_='icon-ok').decompose() #gets rid of i class='icon-ok' since it isn't needed
             product_availability = paragraphs.find('p', class_='instock availability').text.replace('\n', '').strip(' ') #replaces and stips all the uneeded whitespace
-            product_availability_delete = paragraphs.find('p', class_='instock availability').decompose()
-            book_rating_delete = paragraphs.select_one('p', class_= 'star-rating.One.Two.Three.Four.Five').decompose()#get rid of star-rating class
+            _ = paragraphs.find('p', class_='instock availability').decompose()
+            _ = paragraphs.select_one('p', class_= 'star-rating.One.Two.Three.Four.Five').decompose()#get rid of star-rating class
             book_summary = paragraphs.find('p').text
             
-        
         #put data into a dictionary 
-            products_data = [{
+            products_data = {
                 'Product Title': product_title,
                 'Product Availability': product_availability,
                 'Product Description': book_summary,
-
-
-            }]
-            
-    return products_data #returns the descriptions of all the books (products)
+            }
+            products_data_dict_list.append(products_data)       
+    return products_data_dict_list #returns the list of dictionaries of the product's data
 
 #############################################################################################################
 #function that takes products data dictionary and prints the product description only for testing purposes
@@ -134,16 +132,19 @@ def turn_data_into_dataframe(data):
     dataframe = pd.DataFrame(data)
     return dataframe
 
+def print_ten_rows_dataframe(ten_rows_data):
+    return print (ten_rows_data.head(10))
+
 #calls back all homepage urls
 mainpage_urls = get_homepage_urls(f'https://books.toscrape.com')
 
 #calls function that requests all homepage urls into BeautifulSoup
 mainpage_soup_1 = request_one(mainpage_urls)
 
-#calls back all product urls
+#calls back ALL product urls
 product_urls = get_productpages_urls(mainpage_soup_1, f'https://books.toscrape.com/catalogue/')
 
-#calls back ten product urls for testing purposes
+#calls back ten product urls for testing purposes ONLY
 ten_products = ten_product_urls(mainpage_soup_1, f'https://books.toscrape.com/catalogue/')
 
 #calls function that requests product urls into BeautifulSoup
@@ -151,14 +152,17 @@ productpage_soup_2 = request_two(ten_products)
 
 #calls the function that gets the data for the products from the product pages
 productpages_data = get_productpages_data(productpage_soup_2)
-print(productpages_data)
 
 #calls function that only returns product description from a dictionary
 product_description = product_description_data(productpages_data)
+print(product_description)
 
 #calls function that turns data from product pages into a dataframe
 df = turn_data_into_dataframe(productpages_data)
 
+
+#calls function that prints only the first ten rows in the dataframe
+#print_ten_rows_dataframe(df)
 
 
         
