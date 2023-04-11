@@ -91,7 +91,6 @@ def request_two (booktitle_urls):
 
 def get_productpages_data(soup_2):
     products_data_dict_list = []
-
     for soup in soup_2:
         book_product = soup.find_all('article', class_='product_page') #finds all div's with class content 
         
@@ -118,11 +117,13 @@ def get_productpages_data(soup_2):
 
         
         #put data into a dictionary 
+        
             products_data = {
                 'Product Title': product_title,
                 'Product Availability': product_availability,
                 'Product Description': book_summary,
                 
+            
             }
             
             #appends products_data dictionaries to to products_data_dict_list
@@ -130,14 +131,17 @@ def get_productpages_data(soup_2):
              
     return products_data_dict_list #returns the list of dictionaries of the product's data
 
-def put_urls_into_dictionary(urls_list, data_dict):
-    complete_dict_list = []
-    for url in urls_list:
-        complete_dict = {'URL': url}
-        [complete_dict.update(data) for data in data_dict]
-        complete_dict_list.append(complete_dict)
-    print(len(complete_dict_list))
-    return complete_dict_list
+########################################################################
+#function that update the list of dictionaries from a list of urls
+########################################################################
+
+def put_urls_into_dictionary(urls_list, data_dict_list):
+    #loops through the range of indicies in the urls_list
+    for index in range(len(urls_list)):
+        #adds new url key to the list of dictionaries
+       (data_dict_list[index])['Url']=urls_list[index]
+    return data_dict_list#returns list of dictionaries with urls added
+
 
 ########################################################################
 #function that converts products data dictionary into a dataframe
@@ -152,36 +156,37 @@ def dataframe_to_csv(dataframe):
 def print_ten_rows_dataframe(ten_rows_data):
     return print (ten_rows_data.head(10))
 
+def main():
+    #calls back all homepage urls
+    mainpage_urls = get_homepage_urls(f'https://books.toscrape.com')
 
-#calls back all homepage urls
-mainpage_urls = get_homepage_urls(f'https://books.toscrape.com')
+    #calls function that requests all homepage urls into BeautifulSoup
+    mainpage_soup_1 = request_one(mainpage_urls)
 
-#calls function that requests all homepage urls into BeautifulSoup
-mainpage_soup_1 = request_one(mainpage_urls)
+    #calls back ALL product urls
+    product_urls = get_productpages_urls(mainpage_soup_1, f'https://books.toscrape.com/catalogue/')
 
-#calls back ALL product urls
-product_urls = get_productpages_urls(mainpage_soup_1, f'https://books.toscrape.com/catalogue/')
+    #calls back ten product urls for testing purposes ONLY
+    ten_products = ten_product_urls(mainpage_soup_1, f'https://books.toscrape.com/catalogue/')
 
-#calls back ten product urls for testing purposes ONLY
-ten_products = ten_product_urls(mainpage_soup_1, f'https://books.toscrape.com/catalogue/')
+    #calls function that requests product urls into BeautifulSoup
+    productpage_soup_2 = request_two(ten_products)
 
-#calls function that requests product urls into BeautifulSoup
-productpage_soup_2 = request_two(ten_products)
+    #calls the function that gets the data for the products from the product pages
+    productpages_data = get_productpages_data(productpage_soup_2)
 
-#calls the function that gets the data for the products from the product pages
-productpages_data = get_productpages_data(productpage_soup_2)
+    #calls function that adds url_list to the list of dictionaries
+    productdictionary = put_urls_into_dictionary(ten_products, productpages_data)
 
-productdictionary = put_urls_into_dictionary(ten_products, productpages_data)
-#print(productdictionary)
-#calls function that turns data from product pages into a dataframe
-df = turn_data_into_dataframe(productpages_data)
-#print(df)
+    #calls function that turns data from product pages into a dataframe
+    df = turn_data_into_dataframe(productdictionary)
+    print(df)
 
-#dataframe_to_csv(df)
+    #calls function that converts dataframe into csv
+    data_to_csv = dataframe_to_csv(df)
 
-
-#calls function that prints only the first ten rows in the dataframe
-#print_ten_rows_dataframe(df)
+if __name__ == "__main__":
+    main()
 
 
         
