@@ -2,6 +2,28 @@ from bs4 import BeautifulSoup
 import requests
 import re
 import pandas as pd
+import time
+import random
+from datetime import datetime
+
+#####################################################
+#csv file that saves all debug errors to the file
+#####################################################
+
+def debug_file(message):
+   
+    try:
+        current_date = datetime.today()
+        debug_dict = [{'Debug:':message,
+        "Date Execution:": str(current_date)}]
+        
+        debug_dataframe = pd.DataFrame(debug_dict)
+
+    except Exception as v:
+        print(f'{v} error was raised. Please check error.')
+    
+    return debug_dataframe.to_csv('WebScrapDebug.csv', mode='a', index=False)
+
 
 ################################################################################
 #function below gets first BeautifulSoup request to find
@@ -9,32 +31,54 @@ import pandas as pd
 #on all 1000 books
 ################################################################################
 
-################################################################################################
+###################################################################################
 #function that grabs all 50 mainpage urls that each has a url for product pages
-################################################################################################
+###################################################################################
 
-def get_homepage_urls(main_index):
-    homepage_urls_list = []
-    page = 1 #starts at page while and each page adds 1 to it has it go through belows loop
-    
-    while page != 51: #produces pages 1 - 50 to put into homepage_url so it can be placed into requests
-        homepage_url = main_index + f'/catalogue/page-{page}.html'#goes into mainpage_url and gets called here
-        #timeout gives it 10 seconds to connect to ther server, and timeout if server does not send any data
-        homepage_urls_list.append(homepage_url)
-        page = page + 1 #adds 1 to each page number until it reaches 50 pages
-    return homepage_urls_list #returns list of all 50 mainpages url
-
-################################################################################################
-#function requests homepage_urls_list into BeautifulSoup to parse urls into html
-################################################################################################
-
-def request_one(homepage_urls_list):
+def get_homepage_urls(url):
+    retry_count_1 = 0
+    page_number = 0
     soup_1_list = []
-    for url in homepage_urls_list:
-        request_1 = requests.get(url, timeout=(10)) 
-        soup_1 = BeautifulSoup(request_1.text, 'html.parser') #it can display mainpage_url html code
-        soup_1_list.append(soup_1)#appends soup_1 into a the soup_1_list
-    return soup_1_list
+    page_load = True
+
+    #loop that checks to see whether page load is false
+    while page_load == True:
+        try:
+            #while pages load is true it adds 1 page to the page number
+            page_number += 1
+            homepage_urls = url + f'catalogue/page-{page_number}.html'
+            page_request_1 = requests.get(homepage_urls, timeout=(10))
+            soup_1 = BeautifulSoup(page_request_1.text, 'html.parser') #it can display mainpage_url html code
+            #checks url for status code 200 which means the url is correct
+            if page_request_1.status_code == 200:
+                soup_1_list.append(soup_1)
+                
+            #checks url for status code 404 which means the url is incorrect and is false
+            elif page_request_1.status_code == 404:
+                #pages don't load and is now false
+                page_load = False
+                debug_file(f'Code: {page_request_1.status_code} on url: {homepage_urls}.')
+            else:
+                #check if any other code comes up
+                debug_file(f'Code: {page_request_1.status_code} on url: {homepage_urls}.')
+        #if any code has come up as an exception to retry the request to see if page loads later
+        except Exception as e:
+            #if the retry count is less or equal to 2 (after 2 it will stop since it is false)
+            if retry_count_1 <= 2:
+                #will iterate one after each retry
+                retry_count_1 += 1
+                #random wait time generated
+                random_wait_time = random.uniform(2,4)
+                #the time to retry is randomly generated
+                time.sleep(random_wait_time)
+                debug_file(f'Code: {page_request_1.status_code} on url: {homepage_urls} with exception error: {e}. Trying again in {random_wait_time} seconds. Has retried {retry_count_1} times. ')
+            else:
+                debug_file(f'Code: {page_request_1.status_code} on url: {homepage_urls} with exception error: {e}. Trying again in {random_wait_time} seconds. Has retried {retry_count_1} times. Max try has exceeded. ')
+    
+    #shows how many urls have been saved in file
+    debug_file(f'The amount of homepage urls that have been saved is {len(soup_1_list)} urls.')
+    return soup_1_list#returns list of all 50 mainpages url
+
 
 ################################################################################################
 #function that finds each product page url by combining the homepage url with book titles url
@@ -80,14 +124,25 @@ def ten_product_urls(soup_1, productpage_url):
 def request_two (booktitle_urls):
     soup_2_list = []
     #loops through booktitle_urls list
-
-    for urls in booktitle_urls:
-    #calls the product_urls into requests through booktitle_urls
-    #timeout gives it 20 seconds to connect to the server, and sends an error if timeout occurs
-        request_2 = requests.get(urls, timeout=(20))
-        soup_2 = BeautifulSoup(request_2.text, 'html.parser')#displays product_urls html
-        soup_2_list.append(soup_2)#appends soup_2 to soup_2_list
+    try:
+        for urls in booktitle_urls:
+        #calls the product_urls into requests through booktitle_urls
+        #timeout gives it 20 seconds to connect to the server, and sends an error if timeout occurs
+            request_2 = requests.get(urls, timeout=(20))
+            soup_2 = BeautifulSoup(request_2.text, 'html.parser')#displays product_urls html
+            if request_2.status_code == 200:
+                soup_2_list.append(soup_2)#appends soup_2 to soup_2_list
+            elif request_2.status_code == 404:
+                print(f'Code: {request_2.status_code} on url: {urls}. It needs to be checked.')
+            else:
+                print(f'Code: {request_2.status_code} on url: {urls}. It needs to be checked.')
+    except TypeError as t:
+        print(f'Error: {t} has been raised. Urls do not exist from some error.')
     return soup_2_list #returns list of all product pages parsed html
+
+########################################################################################################
+#function that gets data from product pages and puts it into a list of dictionaries
+########################################################################################################
 
 def get_productpages_data(soup_2):
     products_data_dict_list = []
@@ -107,15 +162,8 @@ def get_productpages_data(soup_2):
             _ = paragraphs.select_one('p', class_= 'star-rating.One.Two.Three.Four.Five').decompose()#get rid of star-rating class
             
             #finds product descriptions in 'p' tag
-            book_summary = paragraphs.find('p').text
+            book_summary = paragraphs.find('p').text.replace("â\x80\x99", "'").replace("â\x80\x94", "-").replace("â\x80\x9c", '"').replace("â\x80\x9d", '"').replace('â\x80\x98â\x80', '…').replace('â\x80\x98', "'")
 
-            replacements = [("â\x80\x99", "'"), ("â\x80\x94", "-"), ("â\x80\x9c", '"'),("â\x80\x9d", '"'), ('â\x80\x98â\x80', '…'), ('â\x80\x98', "'")]#symbols that need replacing in a list
-        #for loop that iterates over replacements list to replace the symbols in the book summary paragraph
-            for characters, replacement in replacements:
-                if characters in book_summary:
-                    book_summary = book_summary.replace(characters, replacement)#the characters in tuple must be replaced into a string variable replaceme
-
-        
         #put data into a dictionary 
         
             products_data = {
@@ -137,9 +185,13 @@ def get_productpages_data(soup_2):
 
 def put_urls_into_dictionary(urls_list, data_dict_list):
     #loops through the range of indicies in the urls_list
-    for index in range(len(urls_list)):
-        #adds new url key to the list of dictionaries
-       (data_dict_list[index])['Url']=urls_list[index]
+    try:
+        for index in range(len(urls_list)):   
+            if len(urls_list) == len(data_dict_list):
+                #adds new url key to the list of dictionaries
+                (data_dict_list[index])['Url']=urls_list[index]
+    except TypeError as t:
+        print(f'Error: {t} has been raised. The lists length do not match.')
     return data_dict_list#returns list of dictionaries with urls added
 
 
@@ -153,15 +205,10 @@ def turn_data_into_dataframe(data):
 def dataframe_to_csv(dataframe):
     return dataframe.to_csv('additional_book_data1.csv', mode='a', index=False)
 
-def print_ten_rows_dataframe(ten_rows_data):
-    return print (ten_rows_data.head(10))
 
 def main():
     #calls back all homepage urls
-    mainpage_urls = get_homepage_urls(f'https://books.toscrape.com')
-
-    #calls function that requests all homepage urls into BeautifulSoup
-    mainpage_soup_1 = request_one(mainpage_urls)
+    mainpage_soup_1 = get_homepage_urls(f'https://books.toscrape.com/')
 
     #calls back ALL product urls
     product_urls = get_productpages_urls(mainpage_soup_1, f'https://books.toscrape.com/catalogue/')
@@ -183,7 +230,7 @@ def main():
     print(df)
 
     #calls function that converts dataframe into csv
-    data_to_csv = dataframe_to_csv(df)
+    #data_to_csv = dataframe_to_csv(df)
 
 if __name__ == "__main__":
     main()
